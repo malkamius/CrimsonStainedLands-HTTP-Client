@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web MUD Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #output {
+            flex-grow: 1;
+            overflow-y: auto;
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        #input {
+            width: 100%;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="output"></div>
+    <input type="text" id="input" placeholder="Enter command...">
+
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('input');
+        let socket;
+
+        function connect() {
+            // Connect to our server using the same host but with WebSocket protocol
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            socket = new WebSocket(`${protocol}//${host}`);
+
+            socket.onopen = function(e) {
+                appendToOutput('Connected to MUD server');
+            };
+
+            socket.onmessage = function(event) {
+                appendToOutput(event.data);
+            };
+
+            socket.onclose = function(event) {
+                if (event.wasClean) {
+                    appendToOutput(`Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                } else {
+                    appendToOutput('Connection died');
+                }
+            };
+
+            socket.onerror = function(error) {
+                appendToOutput(`Error: ${error.message}`);
+            };
+        }
+
+        function appendToOutput(message) {
+            output.innerHTML += message.replace(/\n/g, '<br>') + '<br>';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const command = input.value;
+                if (command === '/connect') {
+                    connect();
+                } else if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(command);
+                    appendToOutput(`> ${command}`);
+                } else {
+                    appendToOutput('Not connected. Type /connect to connect to the MUD server.');
+                }
+                input.value = '';
+            }
+        });
+
+        appendToOutput('Welcome to the Web MUD Client');
+        appendToOutput('Type /connect to connect to the MUD server');
+    </script>
+</body>
+</html>
