@@ -29,31 +29,53 @@ const ws = new WebSocket.Server({ server });
 
 
 ws.on('connection', (ws) => {
-    console.log('New WebSocket connection');
+	try {
+		console.log('New WebSocket connection');
 
-    const mudSocket = new net.Socket();
+		const mudSocket = new net.Socket();
 
-    mudSocket.connect(MUD_PORT, MUD_HOST, () => {
-        console.log('Connected to MUD server');
-    });
+		mudSocket.connect(MUD_PORT, MUD_HOST, () => {
+			console.log('Connected to MUD server');
+		});
 
-    mudSocket.on('data', (data) => {
-        ws.send(data.toString());
-    });
+		mudSocket.on('data', (data) => {
+			try {
+				ws.send(data.toString());
+			} catch (error) { 
+			}
+		});
 
-    mudSocket.on('close', () => {
-        console.log('MUD server connection closed');
-        ws.close();
-    });
+		mudSocket.on('close', () => {
+			try {
+				console.log('MUD server connection closed');
+			} catch (error) { 
+				ws.close();
+			}
+		});
+		
+		mudSocket.on('error', function(error) {
+			ws.send('Connection closed.\r\n');
+			mudSocket.destroy(); 
+		});
+		ws.on('message', (message) => {
+			try {
+				mudSocket.write(message + '\n');
+			}
+			catch (error) { 
+			}
+		});
 
-    ws.on('message', (message) => {
-        mudSocket.write(message + '\n');
-    });
-
-    ws.on('close', () => {
-        console.log('WebSocket connection closed');
-        mudSocket.destroy();
-    });
+		ws.on('close', () => {
+			try {
+				console.log('WebSocket connection closed');
+				mudSocket.destroy(); 
+			}
+			catch (error) { 
+			}
+		});
+	}
+	catch (error) { 
+	}
 });
 
 // Start the server
