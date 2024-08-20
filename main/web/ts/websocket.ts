@@ -58,7 +58,7 @@ export class WebSocketManager {
 
         // Handler for when the connection is opened
         this.socket.onopen = (e: Event) => {
-            this.outputHandler('Connected to MUD server');
+            this.outputHandler('Connected to MUD server\n');
             this.onConnectHandler();
         };
 
@@ -70,15 +70,15 @@ export class WebSocketManager {
         // Handler for when the connection is closed
         this.socket.onclose = (event: CloseEvent) => {
             if (event.wasClean) {
-                this.outputHandler(`Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                this.outputHandler(`Connection closed cleanly, code=${event.code} reason=${event.reason}\n`);
             } else {
-                this.outputHandler('Connection died');
+                this.outputHandler('Connection died\n');
             }
         };
 
         // Handler for connection errors
         this.socket.onerror = (error: Event) => {
-            this.outputHandler(`Error: ${(error as ErrorEvent).message}`);
+            this.outputHandler(`Error: ${(error as ErrorEvent).message}\n`);
         };
     }
 
@@ -93,7 +93,7 @@ export class WebSocketManager {
             this.inputHandler(message);
         } else {
             // If not connected, output an error message
-            this.outputHandler('Not connected. Type /connect to connect to the MUD server.');
+            this.outputHandler('Not connected. Type /connect to connect to the MUD server.\n');
         }
     }
 
