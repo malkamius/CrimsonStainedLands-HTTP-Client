@@ -86,15 +86,35 @@ ws.on('connection', (ws) => {
         ws.close();
     });
 
-    // Forward messages from WebSocket client to MUD server
+    // Handle errors on MUD socket
+    mudSocket.on('error', (error) => {
+        console.error('MUD socket error:', error.message);
+        if (error.code === 'ECONNRESET') {
+            console.log('Connection reset by the MUD server. Attempting to reconnect...');
+            // You might want to implement a reconnection strategy here
+        }
+        ws.send('Error in MUD server connection: ' + error.message + '\n');
+        ws.close();
+    });
+
+     // Forward messages from WebSocket client to MUD server
     ws.on('message', (message) => {
-        mudSocket.write(message + '\n');
+        if (mudSocket.writable) {
+            mudSocket.write(message + '\n');
+        } else {
+            console.log('Cannot write to MUD socket - connection might be closed');
+            ws.send('Error: Cannot send message to MUD server - connection might be closed\n');
+        }
     });
 
     // Handle WebSocket connection close
     ws.on('close', () => {
         console.log('WebSocket connection closed');
         mudSocket.destroy();
+    });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error.message);
     });
 });
 
