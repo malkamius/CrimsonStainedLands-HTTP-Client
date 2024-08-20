@@ -36,53 +36,80 @@ export class ANSITextColorizer {
         97: "rgb(255, 255, 255)"  // Bright White
     };
 
-    /**
-     * Parses ANSI color codes from the input text.
-     * @param text The input text containing ANSI codes
-     * @param startIndex The index to start parsing from
-     * @returns A tuple of [newIndex, colorCode, isBold]
-     */
-    private ParseColorCode(text: string, startIndex: number): [number, number | string, boolean] {
-        // Check for standard ANSI color codes
-        const standardMatch = text.substring(startIndex).match(/^\[(?:1;)?(\d+)m/);
-        if (standardMatch) {
-            const isBold = standardMatch[0].includes('1;');
-            return [startIndex + standardMatch[0].length, parseInt(standardMatch[1]), isBold];
+    // Extended color palette for 256 colors
+    private readonly PALETTE_256: string[] = [
+        // 16 basic colors
+        "#000000", "#800000", "#008000", "#808000", "#000080", "#800080", "#008080", "#c0c0c0",
+        "#808080", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff", "#00ffff", "#ffffff",
+        // 216 RGB colors
+        ...Array.from({length: 216}, (_, i) => {
+            const r = Math.floor(i / 36) * 51;
+            const g = Math.floor((i % 36) / 6) * 51;
+            const b = (i % 6) * 51;
+            return `rgb(${r},${g},${b})`;
+        }),
+        // 24 grayscale colors
+        ...Array.from({length: 24}, (_, i) => {
+            const v = 8 + i * 10;
+            return `rgb(${v},${v},${v})`;
+        })
+    ];
+    private ParseColorCode(text: string, startIndex: number): [number, number | string, boolean, boolean] {
+        const escapeSequence = text.substring(startIndex);
+        let match;
+        
+        // 256 colors
+        if ((match = escapeSequence.match(/^\[(38|48);5;(\d+)m/))) {
+            const [fullMatch, base, colorId] = match;
+            var color = parseInt(colorId);
+            if(color > 8) color = color - 8 + 10;
+            return [startIndex + fullMatch.length, color + 30, false, true]; // Not bold, not base color
         }
 
-        // Check for RGB color codes
-        const rgbMatch = text.substring(startIndex).match(/^\[(\d+);2;(\d+);(\d+);(\d+)m/);
-        if (rgbMatch) {
-            const [_, base, r, g, b] = rgbMatch.map(Number);
-            return [startIndex + rgbMatch[0].length, `rgb(${r},${g},${b})`, false];
+        // RGB colors
+        if ((match = escapeSequence.match(/^\[(?:38|48);2;(\d+);(\d+);(\d+)m/))) {
+            const [fullMatch, r, g, b] = match;
+            return [startIndex + fullMatch.length, `rgb(${r},${g},${b})`, false, false]; // Not bold, not base color
         }
 
-        // Return default values if no match is found
-        return [startIndex, -1, false];
+        // Standard ANSI colors
+        if ((match = escapeSequence.match(/^\[(?:1;)?(\d+)m/))) {
+            const [fullMatch, colorCode] = match;
+            const isBold = fullMatch.includes('1;');
+            const code = parseInt(colorCode);
+            const isBaseColor = code == 0 || (code >= 30 && code <= 37) || (code >= 40 && code <= 47) || 
+                                (code >= 90 && code <= 97) || (code >= 100 && code <= 107);
+            return [startIndex + fullMatch.length, code, isBold, isBaseColor];
+        }
+
+        // No match found
+        return [startIndex, -1, false, false];
     }
 
-    /**
-     * Sets the current color and bold state based on the parsed color code.
-     * @param colorCode The color code (either a number for ANSI or a string for RGB)
-     * @param isBold Whether the text should be bold
-     */
-    private SetColor(colorCode: number | string, isBold: boolean): void {
+    private SetColor(colorCode: number | string, isBold: boolean, isBaseColor: boolean): void {
         this.NewIsBold = isBold;
-
+        
         if (typeof colorCode === 'string') {
-            // Handle RGB color
-            if (colorCode.startsWith('rgb')) {
-                this.NewForegroundColor = colorCode;
-            }
+            // RGB color
+            this.NewForegroundColor = colorCode;
         } else if (typeof colorCode === 'number') {
-            // Handle standard ANSI colors
-            if (colorCode >= 30 && colorCode <= 37) {
-                this.NewForegroundColor = this.PALETTE_VGA[isBold ? colorCode + 60 : colorCode];
-            } else if (colorCode >= 90 && colorCode <= 97) {
+            if (!isBaseColor && colorCode >= 0 && colorCode <= 255) {
+                // 256 color palette
+                this.NewForegroundColor = this.PALETTE_256[colorCode];
+            } else if (colorCode >= 30 && colorCode <= 37) {
+                // Standard foreground colors
                 this.NewForegroundColor = this.PALETTE_VGA[colorCode];
-            } else if (colorCode >= 40 && colorCode <= 47) {
-                this.NewBackgroundColor = this.PALETTE_VGA[colorCode + 50];
+            } else if (isBaseColor && colorCode >= 40 && colorCode <= 47) {
+                // Standard background colors
+                this.NewForegroundColor = this.PALETTE_VGA[colorCode + 50];
+            } else if (!isBaseColor && colorCode >= 40 && colorCode <= 47) {
+                // rgb background colors
+                this.NewBackgroundColor = this.PALETTE_VGA[colorCode - 10];
+            } else if (colorCode >= 90 && colorCode <= 97) {
+                // Bright foreground colors
+                this.NewForegroundColor = this.PALETTE_VGA[colorCode];
             } else if (colorCode >= 100 && colorCode <= 107) {
+                // Bright background colors
                 this.NewBackgroundColor = this.PALETTE_VGA[colorCode - 10];
             } else if (colorCode === 0) {
                 // Reset all styles
@@ -159,8 +186,8 @@ export class ANSITextColorizer {
                 // Append the text before the ANSI code
                 newText = this.AppendText(newText, text.substring(lastIndex, index));
                 // Parse and apply the color code
-                const [newIndex, colorCode, isBold] = this.ParseColorCode(text, index + 1);
-                this.SetColor(colorCode, isBold);
+                const [newIndex, colorCode, isBold, isBaseColor] = this.ParseColorCode(text, index + 1);
+                this.SetColor(colorCode, isBold, isBaseColor);
                 index = newIndex;
             } else if (lastIndex < text.length) {
                 // Append any remaining text

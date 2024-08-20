@@ -19,7 +19,8 @@ const url_map = [
     {request_url: '/', path: 'client.html', content_type: 'text/html'},
     {request_url: '/js/color', path: 'js/color.js', content_type: 'text/javascript'},
     {request_url: '/js/app', path: 'js/app.js', content_type: 'text/javascript'},
-    {request_url: '/js/websocket', path: 'js/websocket.js', content_type: 'text/javascript'}
+    {request_url: '/js/websocket', path: 'js/websocket.js', content_type: 'text/javascript'},
+    {request_url: '/js/telnet_negotiation', path: 'js/telnet_negotiation.js', content_type: 'text/javascript'}
 ];
 
 // Create HTTP server
@@ -67,6 +68,9 @@ const ws = new WebSocket.Server({ server });
 ws.on('connection', (ws) => {
     console.log('New WebSocket connection');
 
+    // Set binary type for incoming WebSocket messages
+    ws.binaryType = 'arraybuffer';
+
     // Create a new socket for MUD server connection
     const mudSocket = new net.Socket();
 
@@ -77,7 +81,8 @@ ws.on('connection', (ws) => {
 
     // Forward data from MUD server to WebSocket client
     mudSocket.on('data', (data) => {
-        ws.send(data.toString());
+        // Send the raw buffer directly
+        ws.send(data, { binary: true });
     });
 
     // Handle MUD server connection close
@@ -93,17 +98,19 @@ ws.on('connection', (ws) => {
             console.log('Connection reset by the MUD server. Attempting to reconnect...');
             // You might want to implement a reconnection strategy here
         }
-        ws.send('Error in MUD server connection: ' + error.message + '\n');
+        ws.send(Buffer.from('Error in MUD server connection: ' + error.message + '\n'), { binary: true });
         ws.close();
     });
 
-     // Forward messages from WebSocket client to MUD server
+    // Forward messages from WebSocket client to MUD server
     ws.on('message', (message) => {
         if (mudSocket.writable) {
-            mudSocket.write(message + '\n');
+            // Ensure the message is a Buffer before writing
+            const buffer = Buffer.isBuffer(message) ? message : Buffer.from(message);
+            mudSocket.write(buffer);
         } else {
             console.log('Cannot write to MUD socket - connection might be closed');
-            ws.send('Error: Cannot send message to MUD server - connection might be closed\n');
+            ws.send(Buffer.from('Error: Cannot send message to MUD server - connection might be closed\n'), { binary: true });
         }
     });
 

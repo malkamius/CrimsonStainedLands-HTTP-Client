@@ -1,5 +1,7 @@
 // websocket.ts
 
+import { TelnetNegotiator, NegotiateResponse } from './telnet_negotiation';
+
 /**
  * Type definition for a function that handles messages
  */
@@ -15,6 +17,8 @@ type ConnectionHandler = () => void;
  * Manages WebSocket connections for a MUD client
  */
 export class WebSocketManager {
+    private negotiator: TelnetNegotiator = new TelnetNegotiator();
+
     // The WebSocket instance
     private socket: WebSocket | null = null;
     
@@ -43,40 +47,70 @@ export class WebSocketManager {
         this.onConnectHandler = onConnectHandler;
     }
 
+    private handleMessage(event: MessageEvent) {
+        if (event.data instanceof ArrayBuffer) {
+            // Handle binary data
+            const uint8Array = new Uint8Array(event.data);
+            //console.log("Received binary data:", uint8Array);
+            
+            // Process the binary data
+            this.processBinaryData(uint8Array);
+        } else if (typeof event.data === "string") {
+            // Handle text data
+            //console.log("Received text data:", event.data);
+            this.processTextData(event.data);
+        } else {
+            console.warn("Received unknown data type:", typeof event.data);
+        }
+    }
+
+    private processBinaryData(data: Uint8Array) {
+        if (this.negotiator.IsNegotiationRequired(data)) {
+            const response: NegotiateResponse = this.negotiator.Negotiate(data);
+            if (response.Response.length > 0) {
+                this.sendResponse(response.Response);
+            }
+            if (response.NewInput.length > 0) {
+                this.outputHandler(new TextDecoder().decode(response.NewInput));
+            }
+        } else {
+            this.outputHandler(new TextDecoder().decode(data));
+        }
+    }
+
+    private processTextData(data: string) {
+        this.outputHandler(data);
+    }
+
+    private sendResponse(response: Uint8Array) {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(response);
+        }
+    }
+
     /**
      * Establishes a WebSocket connection to the server
      */
     connect(): void {
-        // Determine the appropriate WebSocket protocol based on the current page protocol
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
         
-        // Create a new WebSocket connection
         this.socket = new WebSocket(`${protocol}//${host}`);
+        this.socket.binaryType = "arraybuffer";
+        this.socket.onmessage = this.handleMessage.bind(this);
 
-        // Set up event handlers for the WebSocket
-
-        // Handler for when the connection is opened
         this.socket.onopen = (e: Event) => {
             this.outputHandler('Connected to MUD server\n');
             this.onConnectHandler();
         };
 
-        // Handler for incoming messages
-        this.socket.onmessage = (event: MessageEvent) => {
-            this.outputHandler(event.data);
-        };
-
-        // Handler for when the connection is closed
         this.socket.onclose = (event: CloseEvent) => {
-            if (event.wasClean) {
-                this.outputHandler(`Connection closed cleanly, code=${event.code} reason=${event.reason}\n`);
-            } else {
-                this.outputHandler('Connection died\n');
-            }
+            const message = event.wasClean
+                ? `Connection closed cleanly, code=${event.code} reason=${event.reason}\n`
+                : 'Connection died\n';
+            this.outputHandler(message);
         };
 
-        // Handler for connection errors
         this.socket.onerror = (error: Event) => {
             this.outputHandler(`Error: ${(error as ErrorEvent).message}\n`);
         };
@@ -84,15 +118,14 @@ export class WebSocketManager {
 
     /**
      * Sends a message through the WebSocket connection
-     * @param message The message to send
+     * @param message The message to send as a string
      */
     sendMessage(message: string): void {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            // If connected, send the message
-            this.socket.send(message);
+            const uint8Array = new TextEncoder().encode(message + "\n");
+            this.socket.send(uint8Array);
             this.inputHandler(message);
         } else {
-            // If not connected, output an error message
             this.outputHandler('Not connected. Type /connect to connect to the MUD server.\n');
         }
     }
