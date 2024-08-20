@@ -1,1 +1,1 @@
-node proxy-server.js
+node index.js

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "ES2015",
+    "strict": true,
+    "esModuleInterop": true,
+    "outDir": "web/js",
+    "lib": ["ES2015", "DOM"],
+    "moduleResolution": "node"
+  },
+  "include": ["web/ts/*.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,5 @@
+{
+    "WS_PORT": 4003,
+    "MUD_HOST": "localhost",
+    "MUD_PORT": 4000
+}
