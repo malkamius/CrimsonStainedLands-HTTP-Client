@@ -32,7 +32,7 @@ export class NegotiateResponse {
 
 export class TelnetNegotiator {
     public Options: Array<TelnetOption> = [];
-    private SupportedClientTypes: Array<string> = ["256COLOR", "VT100", "ANSI"];
+    private SupportedClientTypes: Array<string> = ["256COLOR", "VT100", "ANSI", "TRUECOLOR"];
     private NegotiatedClientTypes: Array<string> = [];
     private currentTypeIndex: number = -1;
 

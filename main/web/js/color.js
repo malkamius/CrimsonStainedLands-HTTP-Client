@@ -55,6 +55,10 @@ export class ANSITextColorizer {
     ParseColorCode(text, startIndex) {
         const escapeSequence = text.substring(startIndex);
         let match;
+        if ((match = escapeSequence.match(/^\[(3|4|7)z/))) {
+            const [fullMatch] = match;
+            return [startIndex + fullMatch.length, 0, false, true]; // Not bold, not base color
+        }
         // 256 colors
         if ((match = escapeSequence.match(/^\[(38|48);5;(\d+)m/))) {
             const [fullMatch, base, colorId] = match;

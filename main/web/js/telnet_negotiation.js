@@ -35,7 +35,7 @@ export class NegotiateResponse {
 export class TelnetNegotiator {
     constructor() {
         this.Options = [];
-        this.SupportedClientTypes = ["256COLOR", "VT100", "ANSI"];
+        this.SupportedClientTypes = ["256COLOR", "VT100", "ANSI", "TRUECOLOR"];
         this.NegotiatedClientTypes = [];
         this.currentTypeIndex = -1;
         this.ClientNegotiateTelnetType = new Uint8Array([
