@@ -84,15 +84,22 @@ app.use(express.static(path.join(__dirname, 'web')));
 // Define routes
 app.get('/', (req, res) => {
     // Initialize session data if it doesn't exist
-    if (!req.session.visits) {
-        req.session.visits = 0;
+    if (!req.session.loggedin) {
+        req.session.loggedin = false;
     }
-    req.session.visits++;
+    
+    if (!req.session.username) {
+        req.session.username = "";
+    }
 
     res.render('client', { 
-        visits: req.session.visits,
+        loggedin: req.session.loggedin,
+        username: req.session.username,
         wsPort: WS_PORT,
-        isSecure: req.secure
+        isSecure: req.secure,
+        renderPartial: (name, data) => {
+            return ejs.renderFile(path.join(__dirname, 'views', 'partials', `${name}.ejs`), data);
+        }
     });
 });
 
