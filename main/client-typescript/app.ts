@@ -27,7 +27,8 @@ const keyMap: { [key: string]: string } = {
     'Numpad4': 'west',
     'Numpad9': 'up',
     'Numpad3': 'down',
-    'Numpad5': 'look'
+    'Numpad5': 'look',
+    'Escape': '/selectinput'
 };
 
 function appendToOutput(message: string): void {
@@ -72,8 +73,10 @@ function navigateHistory(direction: 'up' | 'down'): void {
 }
 
 function sendCommand(command: string): void {
-    if (command === '/connect') {
+    if (command.toLowerCase() === '/connect') {
         wsManager.connect();
+    } else if (command.toLowerCase() == "/selectinput") {
+        inputField.select();
     } else if (wsManager.isConnected()) {
         wsManager.sendMessage(command);
         appendToOutput(`> ${command}\n`);

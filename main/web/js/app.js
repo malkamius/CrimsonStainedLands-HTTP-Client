@@ -18,7 +18,8 @@ const keyMap = {
     'Numpad4': 'west',
     'Numpad9': 'up',
     'Numpad3': 'down',
-    'Numpad5': 'look'
+    'Numpad5': 'look',
+    'Escape': '/selectinput'
 };
 function appendToOutput(message) {
     const processedMessage = message
@@ -57,8 +58,11 @@ function navigateHistory(direction) {
     }, 0);
 }
 function sendCommand(command) {
-    if (command === '/connect') {
+    if (command.toLowerCase() === '/connect') {
         wsManager.connect();
+    }
+    else if (command.toLowerCase() == "/selectinput") {
+        inputField.select();
     }
     else if (wsManager.isConnected()) {
         wsManager.sendMessage(command);
