@@ -74,11 +74,11 @@ export class WebSocketManager {
         this.socket.onclose = (event) => {
             const message = event.wasClean
                 ? `Connection closed cleanly, code=${event.code} reason=${event.reason}\n`
-                : 'Connection died\n';
+                : '\nConnection died\n';
             this.outputHandler(message);
         };
         this.socket.onerror = (error) => {
-            this.outputHandler(`Error: ${error.message}\n`);
+            this.outputHandler(`\nError: ${error.message}\n`);
         };
     }
     /**

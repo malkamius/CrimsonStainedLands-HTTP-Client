@@ -143,7 +143,7 @@ ws.on('connection', (ws) => {
             console.log('Connection reset by the MUD server. Attempting to reconnect...');
             // You might want to implement a reconnection strategy here
         }
-        ws.send(Buffer.from('Error in MUD server connection: ' + error.message + '\n'), { binary: true });
+        ws.send(Buffer.from('\nError in MUD server connection: ' + error.message + '\n'), { binary: true });
         ws.close();
     });
 
@@ -155,7 +155,7 @@ ws.on('connection', (ws) => {
             mudSocket.write(buffer);
         } else {
             console.log('Cannot write to MUD socket - connection might be closed');
-            ws.send(Buffer.from('Error: Cannot send message to MUD server - connection might be closed\n'), { binary: true });
+            ws.send(Buffer.from('\nError: Cannot send message to MUD server - connection might be closed\n'), { binary: true });
         }
     });
 

@@ -1,55 +1,103 @@
 // app.ts
-// Import necessary classes from other modules
 import { WebSocketManager } from './websocket';
 import { ANSITextColorizer } from './color';
-// Get references to DOM elements
 const outputDiv = document.getElementById('output');
 const inputField = document.getElementById('input');
-// Initialize WebSocketManager with appropriate handlers
-const wsManager = new WebSocketManager(appendToOutput, // Handler for output messages
-(message) => appendToOutput(`> ${message}\n`), // Handler for input messages (prefixed with ">")
-() => appendToOutput('Connected successfully\n') // Handler for successful connection
-);
-// Initialize ANSITextColorizer for processing colored text
+const wsManager = new WebSocketManager(appendToOutput, (message) => { }, //appendToOutput(`> ${message}\n`),
+() => appendToOutput('Connected successfully\n'));
 const textColorizer = new ANSITextColorizer();
-/**
- * Appends a message to the output div, processing it for HTML display
- * @param message The message to append
- */
+// Command history functionality
+const maxHistoryLength = 20;
+let commandHistory = [];
+let currentHistoryIndex = -1;
+// Keymap for directional commands
+const keyMap = {
+    'Numpad8': 'north',
+    'Numpad6': 'east',
+    'Numpad2': 'south',
+    'Numpad4': 'west',
+    'Numpad9': 'up',
+    'Numpad3': 'down',
+    'Numpad5': 'look'
+};
 function appendToOutput(message) {
-    // Process the message:
-    // 1. Replace newlines with <br> tags
-    // 2. Replace spaces with non-breaking spaces
-    // 3. Replace tabs with four non-breaking spaces
     const processedMessage = message
         .replace(/\n/g, '<br>')
         .replace(/ /g, '&nbsp;')
         .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
-    // Colorize the processed message
     const colorizedMessage = textColorizer.ColorText(processedMessage);
-    // Append the colorized message to the output div
     outputDiv.innerHTML += colorizedMessage;
-    // Scroll to the bottom of the output div
     outputDiv.scrollTop = outputDiv.scrollHeight;
 }
-// Add event listener for keypress events on the input field
+function addToHistory(command) {
+    if (command.trim() !== '') {
+        commandHistory.unshift(command);
+        if (commandHistory.length > maxHistoryLength) {
+            commandHistory.pop();
+        }
+        currentHistoryIndex = -1;
+    }
+}
+function navigateHistory(direction) {
+    if (direction === 'up' && currentHistoryIndex < commandHistory.length - 1) {
+        currentHistoryIndex++;
+    }
+    else if (direction === 'down' && currentHistoryIndex > -1) {
+        currentHistoryIndex--;
+    }
+    if (currentHistoryIndex === -1) {
+        inputField.value = '';
+    }
+    else {
+        inputField.value = commandHistory[currentHistoryIndex];
+    }
+    // Move cursor to the end of the input
+    setTimeout(() => {
+        inputField.selectionStart = inputField.selectionEnd = inputField.value.length;
+    }, 0);
+}
+function sendCommand(command) {
+    if (command === '/connect') {
+        wsManager.connect();
+    }
+    else if (wsManager.isConnected()) {
+        wsManager.sendMessage(command);
+        appendToOutput(`> ${command}\n`);
+    }
+    else {
+        appendToOutput('Not connected. Type /connect to connect to the MUD server.\n');
+    }
+}
+// Event listener for keydown events (handles both regular input and mapped keys)
+document.addEventListener('keydown', function (e) {
+    // Check if the pressed key is in our keyMap
+    if (e.code in keyMap) {
+        e.preventDefault(); // Prevent the key from being entered in the input field
+        const command = keyMap[e.code];
+        sendCommand(command);
+        return;
+    }
+    // Handle arrow keys for command history
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        navigateHistory(e.key === 'ArrowUp' ? 'up' : 'down');
+        return;
+    }
+    // If the input field is not focused, focus it
+    if (document.activeElement !== inputField) {
+        inputField.focus();
+    }
+});
+// Event listener for keypress events (handles Enter key for sending commands)
 inputField.addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         const command = inputField.value;
-        // Handle different commands
-        if (command === '/connect') {
-            wsManager.connect();
-        }
-        else if (wsManager.isConnected()) {
-            wsManager.sendMessage(command);
-        }
-        else {
-            appendToOutput('Not connected. Type /connect to connect to the MUD server.\n');
-        }
-        // Select all text in the input field
-        inputField.select();
+        addToHistory(command);
+        sendCommand(command);
+        inputField.value = '';
     }
 });
-// Display initial messages
 appendToOutput('Welcome to the Web MUD Client\n');
 appendToOutput('Type /connect to connect to the MUD server\n');
+appendToOutput('Use numpad keys for quick movement:\n');
+appendToOutput('8: north, 6: east, 2: south, 4: west, 9: up, 3: down\n');
