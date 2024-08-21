@@ -1,5 +1,9 @@
 {
     "WS_PORT": 4003,
     "MUD_HOST": "localhost",
-    "MUD_PORT": 4000
+    "MUD_PORT": 4000,
+	"session_secret_key": "oogabooga",
+	"cert_path": "I:/certs",
+	"cert_domain": "kbs-cloud.com",
+	"passphrase": "NOTPROVIDED"
 }
