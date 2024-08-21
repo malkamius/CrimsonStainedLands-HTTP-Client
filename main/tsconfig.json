@@ -8,6 +8,6 @@
     "lib": ["ES2015", "DOM"],
     "moduleResolution": "node"
   },
-  "include": ["web/ts/*.ts"],
+  "include": ["client-typescript/*.ts"],
   "exclude": ["node_modules"]
 }

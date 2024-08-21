@@ -62,7 +62,14 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Set up logging middleware
-app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
+app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"', {
+    immediate: true,
+    stream: {
+      write: (message) => {
+        console.log(message.trim());
+      }
+    }
+  }));
 
 // Custom middleware to serve JavaScript files
 app.use('/js', (req, res, next) => {
