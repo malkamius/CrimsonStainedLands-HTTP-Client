@@ -44,7 +44,7 @@ function appendToOutput(message: string): void {
 }
 
 function addToHistory(command: string): void {
-    if (command.trim() !== '') {
+    if (command.trim() !== '' && (commandHistory.length == 0 || commandHistory[0] != command)) {
         commandHistory.unshift(command);
         if (commandHistory.length > maxHistoryLength) {
             commandHistory.pop();
@@ -114,7 +114,7 @@ inputField.addEventListener('keypress', function(e: KeyboardEvent) {
         const command = inputField.value;
         addToHistory(command);
         sendCommand(command);
-        inputField.value = '';
+        inputField.select();
     }
 });
 

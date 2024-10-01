@@ -4,6 +4,15 @@
  */
 export class ANSITextColorizer {
     constructor() {
+        this.NewForegroundColor = "";
+        this.NewBackgroundColor = "";
+        this.NewIsBold = false;
+        this.CurrentForegroundColor = "";
+        this.CurrentBackgroundColor = "";
+        this.CurrentIsBold = false;
+        this.InStyle = false;
+        this.PALETTE_VGA = {};
+        this.PALETTE_256 = {};
         // Current color and style states
         this.NewForegroundColor = "";
         this.NewBackgroundColor = "";
@@ -73,9 +82,9 @@ export class ANSITextColorizer {
             return [startIndex + fullMatch.length, `rgb(${r},${g},${b})`, false, false]; // Not bold, not base color
         }
         // Standard ANSI colors
-        if ((match = escapeSequence.match(/^\[(?:1;)?(\d+)m/))) {
-            const [fullMatch, colorCode] = match;
-            const isBold = fullMatch.includes('1;');
+        if ((match = escapeSequence.match(/^\[([01];)?(\d+)m/))) {
+            const [fullMatch, boldIndicator, colorCode] = match;
+            const isBold = boldIndicator == '1;';
             const code = parseInt(colorCode);
             const isBaseColor = code == 0 || (code >= 30 && code <= 37) || (code >= 40 && code <= 47) ||
                 (code >= 90 && code <= 97) || (code >= 100 && code <= 107);
@@ -96,6 +105,8 @@ export class ANSITextColorizer {
                 this.NewForegroundColor = this.PALETTE_256[colorCode];
             }
             else if (colorCode >= 30 && colorCode <= 37) {
+                if (isBold)
+                    colorCode += 60;
                 // Standard foreground colors
                 this.NewForegroundColor = this.PALETTE_VGA[colorCode];
             }
@@ -184,7 +195,7 @@ export class ANSITextColorizer {
                 // Parse and apply the color code
                 const [newIndex, colorCode, isBold, isBaseColor] = this.ParseColorCode(text, index + 1);
                 this.SetColor(colorCode, isBold, isBaseColor);
-                index = newIndex;
+                index = Number(newIndex);
             }
             else if (lastIndex < text.length) {
                 // Append any remaining text

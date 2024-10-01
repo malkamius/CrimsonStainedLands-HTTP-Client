@@ -11,11 +11,16 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^11.2.1",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "sqlite3": "^5.1.7",
     "undici-types": "^6.19.8",
+    "uuid": "^10.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

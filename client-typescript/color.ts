@@ -5,13 +5,13 @@
 export class ANSITextColorizer {
     NewForegroundColor: string = "";
     NewBackgroundColor: string = "";
-    NewIsBold: string | number | boolean = false;
+    NewIsBold: boolean = false;
     CurrentForegroundColor: string = "";
     CurrentBackgroundColor: string = "";
-    CurrentIsBold: string | number | boolean = false;
-    InStyle: string | number | boolean = false;
-    PALETTE_VGA: { [key: number]: string } = {}
-    PALETTE_256: { [key: number]: string } = {}
+    CurrentIsBold: boolean = false;
+    InStyle: boolean = false;
+    PALETTE_VGA = {}
+    PALETTE_256 = {}
 
     constructor() {
         // Current color and style states
@@ -62,7 +62,7 @@ export class ANSITextColorizer {
             })
         ];
     }
-    ParseColorCode(text: string, startIndex: number) {
+    ParseColorCode(text, startIndex) {
         const escapeSequence = text.substring(startIndex);
         let match;
         if ((match = escapeSequence.match(/^\[(3|4|7)z/))) {
@@ -94,7 +94,7 @@ export class ANSITextColorizer {
         // No match found
         return [startIndex, -1, false, false];
     }
-    SetColor(colorCode: string | number | boolean, isBold: string | number | boolean, isBaseColor: string | number | boolean) {
+    SetColor(colorCode, isBold, isBaseColor) {
         this.NewIsBold = isBold;
         if (typeof colorCode === 'string') {
             // RGB color
@@ -140,7 +140,7 @@ export class ANSITextColorizer {
      * @param newText The new text to append
      * @returns The combined text with appropriate styling
      */
-    AppendText(oldText : string, newText : string) {
+    AppendText(oldText, newText) {
         if (newText === "")
             return oldText;
         let spanCode = "";
@@ -182,7 +182,7 @@ export class ANSITextColorizer {
      * @param text The input text with ANSI color codes
      * @returns The HTML string with color and style information
      */
-    ColorText(text: string) {
+    ColorText(text) {
         let newText = "";
         let index = 0;
         let lastIndex = 0;
@@ -195,7 +195,7 @@ export class ANSITextColorizer {
                 // Parse and apply the color code
                 const [newIndex, colorCode, isBold, isBaseColor] = this.ParseColorCode(text, index + 1);
                 this.SetColor(colorCode, isBold, isBaseColor);
-                index = Number(newIndex);
+                index = newIndex;
             }
             else if (lastIndex < text.length) {
                 // Append any remaining text

@@ -31,7 +31,7 @@ function appendToOutput(message) {
     outputDiv.scrollTop = outputDiv.scrollHeight;
 }
 function addToHistory(command) {
-    if (command.trim() !== '') {
+    if (command.trim() !== '' && (commandHistory.length == 0 || commandHistory[0] != command)) {
         commandHistory.unshift(command);
         if (commandHistory.length > maxHistoryLength) {
             commandHistory.pop();
@@ -98,7 +98,7 @@ inputField.addEventListener('keypress', function (e) {
         const command = inputField.value;
         addToHistory(command);
         sendCommand(command);
-        inputField.value = '';
+        inputField.select();
     }
 });
 appendToOutput('Welcome to the Web MUD Client\n');
