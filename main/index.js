@@ -9,15 +9,14 @@ const ejs = require('ejs');
 const morgan = require('morgan');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const sqlite3 = require('sqlite3').verbose();
 const session = require('express-session');
 
-// Database setup
-const db = new sqlite3.Database('./users.db');
+// // Database setup
+// const db = new sqlite3.Database('./users.db');
 
-db.serialize(() => {
-  db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)");
-});
+// db.serialize(() => {
+//   db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)");
+// });
 
 // Load settings from JSON file, preferring dev settings if available
 var settingsPath = path.join(__dirname, 'config', 'settings.json')
@@ -109,15 +108,16 @@ app.post('/register', async (req, res) => {
         const { username, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        db.run("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashedPassword], function(err) {
-            if (err) {
-                if (err.message.includes('UNIQUE constraint failed')) {
-                    return res.status(400).json({ error: 'Username already exists' });
-                }
-                return res.status(500).json({ error: 'Error registering user' });
-            }
-            res.status(201).json({ message: 'User registered successfully' });
-        });
+        // db.run("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashedPassword], function(err) {
+        //     if (err) {
+        //         if (err.message.includes('UNIQUE constraint failed')) {
+        //             return res.status(400).json({ error: 'Username already exists' });
+        //         }
+        //         return res.status(500).json({ error: 'Error registering user' });
+        //     }
+        //     res.status(201).json({ message: 'User registered successfully' });
+        // });
+        res.status(500).json({ error: 'Error registering user' });
     } catch (error) {
         res.status(500).json({ error: 'Error registering user' });
     }
@@ -127,25 +127,26 @@ app.post('/register', async (req, res) => {
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
-    db.get("SELECT * FROM users WHERE username = ?", [username], async (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Error logging in' });
-        }
-        if (!user) {
-            return res.status(400).json({ error: 'User not found' });
-        }
-        try {
-            if (await bcrypt.compare(password, user.password)) {
-                const accessToken = jwt.sign({ username: user.username, id: user.id }, JWT_SECRET, { expiresIn: '15m' });
-                const refreshToken = jwt.sign({ username: user.username, id: user.id }, JWT_REFRESH_SECRET);
-                res.json({ accessToken, refreshToken });
-            } else {
-                res.status(400).json({ error: 'Invalid password' });
-            }
-        } catch {
-            res.status(500).json({ error: 'Error logging in' });
-        }
-    });
+    // db.get("SELECT * FROM users WHERE username = ?", [username], async (err, user) => {
+    //     if (err) {
+    //         return res.status(500).json({ error: 'Error logging in' });
+    //     }
+    //     if (!user) {
+    //         return res.status(400).json({ error: 'User not found' });
+    //     }
+    //     try {
+    //         if (await bcrypt.compare(password, user.password)) {
+    //             const accessToken = jwt.sign({ username: user.username, id: user.id }, JWT_SECRET, { expiresIn: '15m' });
+    //             const refreshToken = jwt.sign({ username: user.username, id: user.id }, JWT_REFRESH_SECRET);
+    //             res.json({ accessToken, refreshToken });
+    //         } else {
+    //             res.status(400).json({ error: 'Invalid password' });
+    //         }
+    //     } catch {
+    //         res.status(500).json({ error: 'Error logging in' });
+    //     }
+    // });
+    res.status(500).json({ error: 'Error logging in' });
 });
 
 // Token refresh route
@@ -191,7 +192,8 @@ app.get('/', optionalAuthenticateToken, (req, res) => {
 
 // Custom middleware to serve JavaScript files
 app.use('/js', (req, res, next) => {
-    var filePath = path.join(__dirname, 'web', 'js', req.path);
+    const normalizedPath = path.normalize(req.path).replace(/^(\.\.[\/\\])+/, '');
+    var filePath = path.join(__dirname, 'web', 'js', normalizedPath);
     if(!filePath.endsWith(".js")) filePath = filePath + ".js";
     fs.readFile(filePath, (err, content) => {
         if (err) {
@@ -202,6 +204,24 @@ app.use('/js', (req, res, next) => {
         }
     });
 });
+
+app.use('/css', (req, res, next) => {
+    const normalizedPath = path.normalize(req.path).replace(/^(\.\.[\/\\])+/, '');
+    var filePath = path.join(__dirname, 'web', 'css', normalizedPath);
+    if(filePath.endsWith(".css"))
+    {
+        fs.readFile(filePath, (err, content) => {
+            if (err) {
+                next(); // Pass to the next middleware if file not found
+            } else {
+                res.contentType('text/css');  // Changed from 'application/javascript'
+                res.send(content);
+            }
+        });
+    }
+});
+
+app.use('/node_modules/@xterm', express.static(path.join(__dirname, 'node_modules', '@xterm')));
 // Create server (HTTPS or HTTP)
 const server = createServer(app);
 
@@ -213,14 +233,14 @@ ws.on('connection', (ws, req) => {
     console.log('New WebSocket connection');
 
     // Optional authentication for WebSocket
-    const token = new URL(req.url, 'https://localhost:3003').searchParams.get('token');
-    if (token) {
-        jwt.verify(token, JWT_SECRET, (err, decoded) => {
-            if (!err) {
-                ws.user = decoded;
-            }
-        });
-    }
+    // const token = new URL(req.url, 'https://localhost:3003').searchParams.get('token');
+    // if (token) {
+    //     jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    //         if (!err) {
+    //             ws.user = decoded;
+    //         }
+    //     });
+    // }
 
     // Set binary type for incoming WebSocket messages
     ws.binaryType = 'arraybuffer';

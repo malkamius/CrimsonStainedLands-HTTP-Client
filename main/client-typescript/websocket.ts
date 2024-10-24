@@ -88,14 +88,23 @@ export class WebSocketManager {
         }
     }
 
+    disconnect(): void {
+        if(this.socket != null) {
+            this.socket.close();
+            this.socket = null;
+        }
+    }
     /**
      * Establishes a WebSocket connection to the server
      */
     connect(): void {
+        this.disconnect();
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        
-        this.socket = new WebSocket(`${protocol}//${host}`);
+        const host = window.location.hostname;
+        const port = 3003;
+
+        this.socket = new WebSocket(`${protocol}//${host}:${port}`);
+
         this.socket.binaryType = "arraybuffer";
         this.socket.onmessage = this.handleMessage.bind(this);
 

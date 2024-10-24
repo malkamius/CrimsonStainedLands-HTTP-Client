@@ -3,27 +3,31 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "ts-node-dev --respawn --transpile-only app.ts"
+    "build": "esbuild client-typescript/*.ts --bundle --minify --sourcemap --outdir=web/js --format=esm",
+    "watch": "esbuild client-typescript/*.ts --bundle --sourcemap --outdir=web/js --format=esm --watch",
+    "start": "ts-node-dev --respawn --transpile-only app.ts",
+    "dev": "concurrently \"npm run start\" \"npm run watch:client\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^11.2.1",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "jsonwebtoken": "^9.0.2",
+    "latest": "^0.2.0",
     "morgan": "^1.10.0",
-    "sqlite3": "^5.1.7",
     "undici-types": "^6.19.8",
     "uuid": "^10.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "esbuild": "^0.24.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.5.4"
   }
