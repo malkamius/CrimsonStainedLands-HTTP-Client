@@ -101,7 +101,7 @@ export class WebSocketManager {
         this.disconnect();
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
-        const port = 3003;
+        const port = 4003;
 
         this.socket = new WebSocket(`${protocol}//${host}:${port}`);
 
