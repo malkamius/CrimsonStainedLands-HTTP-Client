@@ -10,13 +10,7 @@ const morgan = require('morgan');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
-
-// // Database setup
-// const db = new sqlite3.Database('./users.db');
-
-// db.serialize(() => {
-//   db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)");
-// });
+//const EmailVerificationService = require('./emailVerificationService');
 
 // Load settings from JSON file, preferring dev settings if available
 var settingsPath = path.join(__dirname, 'config', 'settings.json')
@@ -29,9 +23,11 @@ const MUD_HOST = settings.MUD_HOST;
 const MUD_PORT = settings.MUD_PORT;
 const JWT_SECRET = settings.jwt_secret || 'your-secret-key';
 const JWT_REFRESH_SECRET = settings.jwt_refresh_secret || 'your-refresh-secret-key';
-const certpath = settings.cert_path;
-const certdomain = settings.cert_domain;
-
+//const certpath = settings.cert_path;
+//const certdomain = settings.cert_domain;
+const chainpath = settings.chain;
+const keypath = settings.key;
+const certpath = settings.cert;
 // Create Express app
 const app = express();
 
@@ -39,9 +35,9 @@ const app = express();
 function createServer(app) {
     try {
         // Attempt to load SSL/TLS certificate and key
-        const privateKey = fs.readFileSync(path.join(certpath, certdomain + '-key.pem'), 'utf8');
-        const certificate = fs.readFileSync(path.join(certpath, certdomain + '-crt.pem'), 'utf8');
-        const ca = fs.readFileSync(path.join(certpath, certdomain + '-chain-only.pem'), 'utf8');
+        const privateKey = fs.readFileSync(keypath, 'utf8');
+        const certificate = fs.readFileSync(certpath, 'utf8');
+        const ca = fs.readFileSync(chainpath, 'utf8');
 
         const credentials = {
             key: privateKey,
@@ -117,7 +113,6 @@ app.post('/register', async (req, res) => {
         //     }
         //     res.status(201).json({ message: 'User registered successfully' });
         // });
-        res.status(500).json({ error: 'Error registering user' });
     } catch (error) {
         res.status(500).json({ error: 'Error registering user' });
     }
@@ -146,19 +141,18 @@ app.post('/login', (req, res) => {
     //         res.status(500).json({ error: 'Error logging in' });
     //     }
     // });
-    res.status(500).json({ error: 'Error logging in' });
 });
 
 // Token refresh route
 app.post('/token', (req, res) => {
-    const refreshToken = req.body.token;
-    if (refreshToken == null) return res.sendStatus(401);
+    // const refreshToken = req.body.token;
+    // if (refreshToken == null) return res.sendStatus(401);
     
-    jwt.verify(refreshToken, JWT_REFRESH_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        const accessToken = jwt.sign({ username: user.username, id: user.id }, JWT_SECRET, { expiresIn: '15m' });
-        res.json({ accessToken });
-    });
+    // jwt.verify(refreshToken, JWT_REFRESH_SECRET, (err, user) => {
+    //     if (err) return res.sendStatus(403);
+    //     const accessToken = jwt.sign({ username: user.username, id: user.id }, JWT_SECRET, { expiresIn: '15m' });
+    //     res.json({ accessToken });
+    // });
 });
 
 // Logout route
@@ -208,17 +202,15 @@ app.use('/js', (req, res, next) => {
 app.use('/css', (req, res, next) => {
     const normalizedPath = path.normalize(req.path).replace(/^(\.\.[\/\\])+/, '');
     var filePath = path.join(__dirname, 'web', 'css', normalizedPath);
-    if(filePath.endsWith(".css"))
-    {
-        fs.readFile(filePath, (err, content) => {
-            if (err) {
-                next(); // Pass to the next middleware if file not found
-            } else {
-                res.contentType('text/css');  // Changed from 'application/javascript'
-                res.send(content);
-            }
-        });
-    }
+
+    fs.readFile(filePath, (err, content) => {
+        if (err) {
+            next(); // Pass to the next middleware if file not found
+        } else {
+            res.contentType('text/css');  // Changed from 'application/javascript'
+            res.send(content);
+        }
+    });
 });
 
 app.use('/node_modules/@xterm', express.static(path.join(__dirname, 'node_modules', '@xterm')));
@@ -227,6 +219,8 @@ const server = createServer(app);
 
 // Create WebSocket server attached to the server
 const ws = new WebSocket.Server({ server });
+
+// service.start().catch(console.error);
 
 // Handle new WebSocket connections
 ws.on('connection', (ws, req) => {

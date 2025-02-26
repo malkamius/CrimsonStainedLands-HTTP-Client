@@ -31,6 +31,7 @@ export class WebSocketManager {
     // Handler called when a connection is established
     private onConnectHandler: ConnectionHandler;
 
+    public port: number;
     /**
      * Constructor for WebSocketManager
      * @param outputHandler Function to handle output messages
@@ -40,11 +41,13 @@ export class WebSocketManager {
     constructor(
         outputHandler: MessageHandler,
         inputHandler: MessageHandler,
-        onConnectHandler: ConnectionHandler
+        onConnectHandler: ConnectionHandler,
+        port: number
     ) {
         this.outputHandler = outputHandler;
         this.inputHandler = inputHandler;
         this.onConnectHandler = onConnectHandler;
+        this.port = port;
     }
 
     private handleMessage(event: MessageEvent) {
@@ -101,7 +104,7 @@ export class WebSocketManager {
         this.disconnect();
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
-        const port = 4003;
+        const port = this.port;
 
         this.socket = new WebSocket(`${protocol}//${host}:${port}`);
 
@@ -131,7 +134,9 @@ export class WebSocketManager {
      */
     sendMessage(message: string): void {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            const uint8Array = new TextEncoder().encode(message + "\n");
+            // Only append a newline if the message doesn't already end with one
+            const messageToSend = message.endsWith('\n') ? message : message + '\n';
+            const uint8Array = new TextEncoder().encode(messageToSend);
             this.socket.send(uint8Array);
             this.inputHandler(message);
         } else {
