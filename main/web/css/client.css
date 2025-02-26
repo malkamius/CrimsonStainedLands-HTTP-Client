@@ -5,20 +5,40 @@ body, html {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    overflow:hidden;
+    overflow: auto;
 }
 
 /* Apply dark theme to UI elements but exclude terminal */
-.menu-bar,
-.menu-item,
+.client-menu-bar,
+.client-menu-item,
 input[type="text"],
-button,
+.client-button,
 .modal-sidebar,
 .modal-content,
 .modal-header,
 .modal-footer {
     background-color: black;
     color: white;
+}
+
+.client-button:hover {
+    font-size: 101%;
+    transition: 0.3s;
+}
+
+.client-menu-option
+{
+    display: inline;
+}
+.client-button
+{
+    background-color: #8c1f08;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border: 0;    
+    box-shadow: none;
 }
 
 /* Style sidebar items */
@@ -72,18 +92,6 @@ input[type="color"] {
     background-color: rgba(0, 0, 0, 0.8);
 }
 
-/* Make the buttons stand out */
-button {
-    background-color: #333;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #444;
-}
 
 .pageheader {
 	color: #8c1f08;
@@ -92,22 +100,6 @@ button:hover {
 a
 {
     color:#8c1f08;
-}
-
-button:hover {
-    font-size: 101%;
-    transition: 0.3s;
-}
-
-button
-{
-    background-color: #8c1f08;
-    border-radius: 4px;
-    color: white;
-    cursor: pointer;
-    padding: 4px;
-    border: 0;    
-    box-shadow: none;
 }
 
 .glow 
@@ -333,7 +325,6 @@ warning
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%); */
-    background-color: white;
     border-radius: 5px;
     width: 80vw;
     height: 80vh;
@@ -377,18 +368,6 @@ warning
     border-top: 1px solid #eee;
 }
 
-button {
-    padding: 8px 16px;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #444;
-}
 
 /* Dark theme styles for the key bindings tab */
 .modal-content table {
@@ -664,6 +643,7 @@ button:hover {
     align-items: center;
     margin-right: 15px;
     position: relative;
+    display: inline;
 }
 
 .profile-dropdown {

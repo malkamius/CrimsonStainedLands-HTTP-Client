@@ -1,2 +1,4 @@
 main/node_modules
 main/config/dev_settings.json
+main/web/js
+package-lock.json

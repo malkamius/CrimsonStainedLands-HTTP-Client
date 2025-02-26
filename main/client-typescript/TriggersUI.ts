@@ -68,6 +68,7 @@ export class TriggersUI {
             
             // Edit button
             const editBtn = document.createElement('button');
+            editBtn.className = 'client-button';
             editBtn.textContent = 'Edit';
             editBtn.style.marginRight = '5px';
             editBtn.addEventListener('click', () => {
@@ -76,6 +77,7 @@ export class TriggersUI {
             
             // Delete button
             const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'client-button';
             deleteBtn.textContent = 'Delete';
             deleteBtn.addEventListener('click', () => {
                 // Remove the trigger
@@ -244,6 +246,7 @@ export class TriggersUI {
         testContainer.appendChild(testInputRow);
         
         const testButton = document.createElement('button');
+        testButton.className = 'client-button';
         testButton.textContent = 'Test Pattern';
         testButton.addEventListener('click', () => {
             // Get the current pattern and type
@@ -301,6 +304,7 @@ export class TriggersUI {
         
         // Save button
         const saveBtn = document.createElement('button');
+        saveBtn.className = 'client-button';
         saveBtn.textContent = 'Save';
         saveBtn.addEventListener('click', () => {
             if (index === -1) {
@@ -328,6 +332,7 @@ export class TriggersUI {
         
         // Cancel button
         const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'client-button';
         cancelBtn.textContent = 'Cancel';
         cancelBtn.style.backgroundColor = '#555';
         cancelBtn.addEventListener('click', () => {

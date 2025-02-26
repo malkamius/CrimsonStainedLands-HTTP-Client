@@ -60,6 +60,7 @@ export class AliasesUI {
             
             // Edit button
             const editBtn = document.createElement('button');
+            editBtn.className = 'client-button';
             editBtn.textContent = 'Edit';
             editBtn.style.marginRight = '5px';
             editBtn.addEventListener('click', () => {
@@ -68,6 +69,7 @@ export class AliasesUI {
             
             // Delete button
             const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'client-button';
             deleteBtn.textContent = 'Delete';
             deleteBtn.addEventListener('click', () => {
                 // Remove the alias
@@ -147,6 +149,7 @@ export class AliasesUI {
         
         // Save button
         const saveBtn = document.createElement('button');
+saveBtn.className = 'client-button';
         saveBtn.textContent = 'Save';
         saveBtn.addEventListener('click', () => {
             if (index === -1) {
@@ -170,6 +173,7 @@ export class AliasesUI {
         
         // Cancel button
         const cancelBtn = document.createElement('button');
+cancelBtn.className = 'client-button';
         cancelBtn.textContent = 'Cancel';
         cancelBtn.style.backgroundColor = '#555';
         cancelBtn.addEventListener('click', () => {

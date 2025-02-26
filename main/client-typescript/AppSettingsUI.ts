@@ -60,20 +60,38 @@ export class AppSettingsUI {
     private createToolbar(): void {
         // Create the toolbar that sits above the terminal
         const toolbar = document.createElement('div');
-        toolbar.className = 'menu-bar';
+        toolbar.className = 'client-menu-bar';
         toolbar.innerHTML = `
-            <div class="menu-item" id="connect-button">Connect</div>
-            <div class="menu-item" id="disconnect-button">Disconnect</div>
-            <div class="menu-item" id="menu-settings">Settings</div>
-            <div class="menu-item" id="menu-aliases">Aliases</div>
-            <div class="menu-item" id="menu-triggers">Triggers</div>
-            <div class="menu-item" id="menu-keys">Keys</div>
-            <div class="menu-item" id="menu-variables">Variables</div>
+            <ul style='padding-left: 0;	list-style-type: none;'>
+            <li class='client-menu-option'>
+            <button class="client-button" id="connect-button">Connect</button>
+            </li>
+            <li class='client-menu-option'>
+            <button class="client-button" id="disconnect-button">Disconnect</button>
+            </li>
+            <li class='client-menu-option'>
+            <button class="client-button" id="menu-settings">Settings</button>
+            </li>
+            <li class='client-menu-option'>
+            <button class="client-button" id="menu-aliases">Aliases</button>
+            </li>
+            <li class='client-menu-option'>
+            <button class="client-button" id="menu-triggers">Triggers</button>
+            </li>
+            <li class='client-menu-option'>
+            <button class="client-button" id="menu-keys">Keys</button>
+            </li>
+            <li class='client-menu-option'>
+            <button class="client-button" id="menu-variables">Variables</button>
+            </li>
+            <li class='client-menu-option'>
             <div class="profile-dropdown-container">
                 <select id="quick-profile-select" class="profile-dropdown">
                     <!-- Profiles will be populated here via JavaScript -->
                 </select>
             </div>
+            </li>
+            </ul>
         `;
         const resizeObserver = new ResizeObserver(entries => {
               this.app.resize();
