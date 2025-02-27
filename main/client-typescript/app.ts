@@ -519,7 +519,27 @@ export class App {
         this.processTriggers(message);
     }
 
-    // Process triggers for a message
+    // Strip control codes
+    private stripAllTerminalCodes(text: string): string {
+        // Main ANSI escape sequences (colors, formatting)
+        let cleaned = text.replace(/\u001b\[\d*(?:;\d+)*[A-Za-z]/g, '');
+        
+        // Other terminal control sequences
+        cleaned = cleaned.replace(/\u001b\](?:.|[\n\r])*?(?:\u0007|\u001b\\)/g, ''); // OSC sequences
+        cleaned = cleaned.replace(/\u001b[PX_^].*?(?:\u001b\\|\u0007)/g, ''); // DCS, SOS, PM, APC sequences
+        cleaned = cleaned.replace(/\u001b[@-Z\\-_]/g, ''); // Single-character escape sequences
+        
+        // Handle legacy color codes used by some MUDs
+        cleaned = cleaned.replace(/\x03\d{1,2}(?:,\d{1,2})?/g, ''); // IRC-style color codes
+        
+        return cleaned;
+    }
+
+    /**
+     * Process triggers for a message
+     * @param text text from the mud
+     * @returns void
+     */
     private processTriggers(text: string): void {
         if (!this.settings.Triggers || this.settings.Triggers.length === 0) {
             return; // No triggers to process
@@ -529,12 +549,16 @@ export class App {
         }
         this.inTriggers = true;
         
-        // Check each trigger against the text
+        // Strip ANSI codes for trigger matching
+        const cleanText = this.stripAllTerminalCodes(text);
+        
+        // Check each trigger against the cleaned text
         for (const trigger of this.settings.Triggers) {
             let isMatch = false;
             
             try {
-                isMatch = this.matchTrigger(text, trigger.type, trigger.match);
+                // Use cleaned text for matching
+                isMatch = this.matchTrigger(cleanText, trigger.type, trigger.match);
                 
                 // If we have a match, execute the trigger actions
                 if (isMatch) {
