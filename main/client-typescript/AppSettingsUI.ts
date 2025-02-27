@@ -312,6 +312,7 @@ l = look
         <p>Variables can store values for use in your commands:</p>
         <pre><code class="language-javascript">
 // Set a variable (name will be stored in uppercase)
+This is not implemented yet.
 /var hp = 100
 
 // Use a variable in a command (wrap in $)
