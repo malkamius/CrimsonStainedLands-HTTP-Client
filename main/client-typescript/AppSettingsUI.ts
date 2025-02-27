@@ -24,7 +24,8 @@ export class AppSettingsUI {
     private menuTriggers: HTMLElement | null = null;
     private menuKeys: HTMLElement | null = null;
     private menuVariables: HTMLElement | null = null;
-    
+    private menuHelp: HTMLElement | null = null;
+
     private sidebarItems: NodeListOf<Element> | null = null;
     private tabContents: NodeListOf<Element> | null = null;
     
@@ -34,6 +35,7 @@ export class AppSettingsUI {
     private bgColorValue: HTMLElement | null = null;
     private textColorValue: HTMLElement | null = null;
     private resetBtn: HTMLElement | null = null;
+    
     
     constructor(app: App) {
         this.app = app;
@@ -85,6 +87,9 @@ export class AppSettingsUI {
             <button class="client-button" id="menu-variables">Variables</button>
             </li>
             <li class='client-menu-option'>
+            <button class="client-button" id="menu-help">Help</button>
+            </li>
+            <li class='client-menu-option'>
             <div class="profile-dropdown-container">
                 <select id="quick-profile-select" class="profile-dropdown">
                     <!-- Profiles will be populated here via JavaScript -->
@@ -120,6 +125,7 @@ export class AppSettingsUI {
                     <div class="sidebar-item" data-tab="triggers">Triggers</div>
                     <div class="sidebar-item" data-tab="keys">Keys</div>
                     <div class="sidebar-item" data-tab="variables">Variables</div>
+                    <div class="sidebar-item" data-tab="help">Help</div>
                 </div>
                 <div class="modal-content">
                     <div class="modal-header">
@@ -279,7 +285,90 @@ export class AppSettingsUI {
                             <button id="add-variable" class="add-btn">Add Variable</button>
                         </div>
                     </div>
-                    
+                    <!-- Help Tab -->
+<div class="tab-content" id="help-tab">
+    <h3>Help Documentation</h3>
+    <div class="help-content">
+        <h4>Basic Commands</h4>
+        <p>Type these commands directly into the input field:</p>
+        <pre><code class="language-javascript">
+// Connect to the server
+/connect
+
+// Disconnect from the server
+/disconnect
+        </code></pre>
+        
+        <h4>Using Aliases</h4>
+        <p>Aliases allow you to create shortcuts for commonly used commands:</p>
+        <pre><code class="language-javascript">
+// Example aliases in the Settings > Aliases tab:
+n = north
+s = south
+l = look
+        </code></pre>
+        
+        <h4>Using Variables</h4>
+        <p>Variables can store values for use in your commands:</p>
+        <pre><code class="language-javascript">
+// Set a variable (name will be stored in uppercase)
+/var hp = 100
+
+// Use a variable in a command (wrap in $)
+say My current HP is $HP$
+        </code></pre>
+        
+        <h4>Creating Triggers</h4>
+        <p>Triggers can run commands or JavaScript when matching text appears:</p>
+        <pre><code class="language-javascript">
+// JavaScript trigger example:
+// This trigger will highlight text in gray when you say something
+// Match field: ^You say '.+'$
+// Type: regex
+// Action Type: javascript
+
+const regex = /^You say '(.+)'$/m;
+const match = event.cleanMessage.match(regex);
+
+if (match && match[1]) {
+    // Find the start position of the quoted text
+    const startQuotePos = event.cleanMessage.indexOf("'") + 1;
+    
+    // Get the length of the quoted text
+    const quotedTextLength = match[1].length;
+    
+    // Apply color to just the quoted text
+    mud.applyColor(event, "#A0A0A0", startQuotePos, startQuotePos + quotedTextLength);
+    
+    // Echo additional text
+    mud.echo(\`\n### \${match[1]} ###\n\`);
+}
+        </code></pre>
+        
+        <h4>Available JavaScript APIs</h4>
+        <p>In JavaScript triggers, you have access to these objects:</p>
+        <pre><code class="language-javascript">
+// The mud object provides these methods:
+mud.echo(text)             // Display text in the terminal
+mud.applyColor(event, color, startIndex, endIndex)  // Colorize text
+mud.sendCommand(command)   // Send a command to the MUD
+
+// The event object contains:
+event.message         // The original message with ANSI codes
+event.cleanMessage    // The message with ANSI codes stripped
+event.startIndex      // The start index of the matched text
+event.endIndex        // The end index of the matched text
+
+// Additional APIs:
+mud.setVariable(name, value, type)  // Set a variable
+mud.getVariable(name)              // Get a variable value
+mud.createTimer(callback, delay)    // Create a timer (ms)
+mud.createInterval(callback, interval)  // Create repeating timer
+mud.cancelTimer(id)                // Cancel a timer
+mud.cancelInterval(id)             // Cancel an interval
+        </code></pre>
+    </div>
+</div>
                     <div class="modal-footer button-row">
                         <button id="save-settings">Save</button>
                         <button id="cancel-settings">Cancel</button>
@@ -374,6 +463,7 @@ export class AppSettingsUI {
         this.menuTriggers = document.getElementById('menu-triggers');
         this.menuKeys = document.getElementById('menu-keys');
         this.menuVariables = document.getElementById('menu-variables');
+        this.menuHelp = document.getElementById('menu-help');
         
         // Get sidebar items and tab contents
         this.sidebarItems = document.querySelectorAll('.sidebar-item');
@@ -413,6 +503,10 @@ export class AppSettingsUI {
             this.menuVariables.addEventListener('click', () => this.openModal('variables'));
         }
         
+        if (this.menuHelp) {
+            this.menuHelp.addEventListener('click', () => this.openModal('help'));
+        }
+
         // Close modal events
         if (this.closeBtn) {
             this.closeBtn.addEventListener('click', () => this.closeModal());
@@ -616,8 +710,83 @@ export class AppSettingsUI {
                 background-color: rgba(220, 53, 69, 0.3);
                 border: 1px solid #dc3545;
             }
+            /* Help tab styles */
+            .help-content {
+                padding: 15px;
+                overflow-y: auto;
+                max-height: 70vh;
+                color: #eee;
+                font-size: 14px;
+            }
+            
+            .help-content h4 {
+                margin-top: 25px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #444;
+                padding-bottom: 8px;
+                color: #ddd;
+            }
+            
+            .help-content p {
+                margin-bottom: 10px;
+                line-height: 1.5;
+            }
+            
+            .help-content pre {
+                background-color: #1E1E1E;
+                border: 1px solid #333;
+                border-radius: 4px;
+                padding: 15px;
+                margin: 10px 0;
+                overflow-x: auto;
+            }
+            
+            .help-content code {
+                font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+                font-size: 13px;
+                color: #dcdcdc;
+            }
+            
+            /* highlight.js theme overrides */
+            .hljs-comment, .hljs-quote {
+                color: #608b4e;
+                font-style: italic;
+            }
+            
+            .hljs-keyword, .hljs-selector-tag {
+                color: #569cd6;
+            }
+            
+            .hljs-string, .hljs-attribute, .hljs-addition {
+                color: #ce9178;
+            }
+            
+            .hljs-number, .hljs-literal {
+                color: #b5cea8;
+            }
+            
+            .hljs-type, .hljs-built_in {
+                color: #4ec9b0;
+            }
         `;
         document.head.appendChild(style);
+        // Add highlight.js stylesheet and script
+        const highlightStyle = document.createElement('link');
+        highlightStyle.rel = 'stylesheet';
+        highlightStyle.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs2015.min.css';
+        document.head.appendChild(highlightStyle);
+        
+        const highlightScript = document.createElement('script');
+        highlightScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js';
+        document.head.appendChild(highlightScript);
+        
+        // Initialize highlight.js after it loads
+        highlightScript.onload = () => {
+            // Check if hljs is available in the window object
+            if (typeof (window as any).hljs !== 'undefined') {
+                (window as any).hljs.highlightAll();
+            }
+        };
     }
     
     private openModal(tabName: string): void {
@@ -687,6 +856,14 @@ export class AppSettingsUI {
                 break;
             case 'variables':
                 this.variablesUI.loadVariables();
+                break;
+            case 'help':
+                // Apply syntax highlighting when switching to help tab
+                if (typeof (window as any).hljs !== 'undefined') {
+                    setTimeout(() => {
+                        (window as any).hljs.highlightAll();
+                    }, 0);
+                }
                 break;
         }
     }

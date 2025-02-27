@@ -4,6 +4,13 @@ import { FitAddon } from '@xterm/addon-fit';
 import { AppSettingsUI } from './AppSettingsUI';
 import { AppSettings } from './AppSettings';
 
+interface text_frame {
+    endIndex: number;
+    startIndex: number;
+    message : string;
+    cleanMessage : string;
+}
+
 export class App {
     private terminal: Terminal;
     private fitAddon: FitAddon;
@@ -18,7 +25,13 @@ export class App {
     private currentProfileName: string = "Default";
     private settingsUI: AppSettingsUI;
     private inTriggers: boolean = false;
-    
+    public currentLine: number = 0;
+    public currentColumn: number = 0;
+    public endLine: number = 0;
+    public endColumn: number = 0;
+    private echos : string[] = [];
+
+
     constructor(terminalId: string, port: number) {
         this.terminalElement = document.getElementById(terminalId);
         this.inputField = document.getElementById('input') as HTMLInputElement;
@@ -512,11 +525,65 @@ export class App {
         // Add command to history
         this.addToHistory(command);
     }
-
+    private inAppend : boolean = false;
     // Append text to the terminal output
     public appendToOutput(message: string): void {
-        this.terminal.write(message);
-        this.processTriggers(message);
+        if(this.inAppend)
+        {
+            this.echos.push(message);
+            return;
+        }
+        this.inAppend = true;
+        var frame : text_frame = { message: message, cleanMessage: "", startIndex: -1, endIndex: -1 };
+        this.processTriggers(frame);
+        this.terminal.write(frame.message);
+        var echos = [... this.echos];
+        this.echos = [];
+        this.inAppend = false;
+        for(var i = 0; i < echos.length; i++) {
+            this.appendToOutput(echos[i]);
+        }
+    }  
+
+    /**
+     * Apply color to text in a specific range of the terminal buffer
+     * @param startLine The starting line of the selection
+     * @param startColumn The starting column of the selection
+     * @param endLine The ending line of the selection
+     * @param endColumn The ending column of the selection
+     * @param color Color specification: either #RRGGBB hex or "r,g,b" format
+     */
+    public applyColor(text : text_frame, color: string, startIndex? : number, endIndex? : number): void {
+        if(endIndex == undefined) endIndex = text.cleanMessage.length;
+        if(startIndex == undefined) startIndex = 0;
+        if(startIndex < 0 || endIndex < 0 || startIndex > text.cleanMessage.length || endIndex > text.cleanMessage.length)
+        {
+            console.error("Invalid index specified.");
+            return;
+        }
+        
+        // Normalize color format and create ANSI color sequence
+        let ansiColorSequence = '';
+        
+        if (color.startsWith('#')) {
+            // Convert hex color to RGB
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            ansiColorSequence = `\u001b[38;2;${r};${g};${b}m`;
+        } else if (color.includes(',')) {
+            // Assume "r,g,b" format
+            const [r, g, b] = color.split(',').map(c => parseInt(c.trim(), 10));
+            ansiColorSequence = `\u001b[38;2;${r};${g};${b}m`;
+        } else {
+            console.error('Invalid color format. Use #RRGGBB or "r,g,b"');
+            return;
+        }
+
+        // Reset color sequence
+        const resetSequence = '\u001b[0m';
+        
+        text.message = (startIndex > 0? text.cleanMessage.substring(0, startIndex) : "") + ansiColorSequence + text.cleanMessage.substring(startIndex, endIndex) + resetSequence + (text.cleanMessage.length > endIndex? text.cleanMessage.substring(endIndex) : "");
     }
 
     // Strip control codes
@@ -535,12 +602,13 @@ export class App {
         return cleaned;
     }
 
+    
     /**
      * Process triggers for a message
      * @param text text from the mud
      * @returns void
      */
-    private processTriggers(text: string): void {
+    private processTriggers(text: text_frame): void {
         if (!this.settings.Triggers || this.settings.Triggers.length === 0) {
             return; // No triggers to process
         }
@@ -550,19 +618,20 @@ export class App {
         this.inTriggers = true;
         
         // Strip ANSI codes for trigger matching
-        const cleanText = this.stripAllTerminalCodes(text);
-        
+        const cleanText = this.stripAllTerminalCodes(text.message);
+        text.cleanMessage = cleanText;
         // Check each trigger against the cleaned text
         for (const trigger of this.settings.Triggers) {
-            let isMatch = false;
-            
             try {
                 // Use cleaned text for matching
-                isMatch = this.matchTrigger(cleanText, trigger.type, trigger.match);
+                var match = this.matchTrigger(cleanText, trigger.type, trigger.match);
+
                 
                 // If we have a match, execute the trigger actions
-                if (isMatch) {
-                    this.executeTriggerActions(trigger.actions, trigger.actionType || 'text');
+                if (match.matched) {
+                    text.startIndex = match.startIndex;
+                    text.endIndex = match.endIndex;
+                    this.executeTriggerActions(text, trigger.actions, trigger.actionType || 'text');
                 }
             } catch (error: any) {
                 console.error(`Error processing trigger "${trigger.match}": ${error.message}`, error);
@@ -572,40 +641,73 @@ export class App {
     }
 
     // Test if a trigger matches text
-    public matchTrigger(text: string, type: string, pattern: string): boolean {
+    public matchTrigger(text: string, type: string, pattern: string): { matched: boolean, startIndex: number, endIndex: number } {
         try {
+            // Default result with no match
+            const noMatch = { matched: false, startIndex: -1, endIndex: -1 };
+            
             if (type === 'regex' || !type) {
                 // Default to regex if type is not specified
                 try {
                     // First try to match against the entire text (multi-line)
                     const multiLineRegex = new RegExp(pattern, 'm');
-                    return multiLineRegex.test(text);
+                    const match = multiLineRegex.exec(text);
+                    
+                    if (match) {
+                        return {
+                            matched: true,
+                            startIndex: match.index,
+                            endIndex: match.index + match[0].length
+                        };
+                    }
+                    
+                    return noMatch;
                 } catch (regexError: any) {
                     console.error(`Invalid regex in trigger "${pattern}": ${regexError.message}`);
-                    return false;
+                    return noMatch;
                 }
             } else if (type === 'substring') {
                 // Substring match can match against the entire text
-                return text.includes(pattern);
+                const index = text.indexOf(pattern);
+                
+                if (index !== -1) {
+                    return {
+                        matched: true,
+                        startIndex: index,
+                        endIndex: index + pattern.length
+                    };
+                }
+                
+                return noMatch;
             } else if (type === 'exact') {
                 const lines = text.split('\n');
                 // Exact match should check each line
+                let currentIndex = 0;
+                
                 for (const line of lines) {
                     if (line === pattern) {
-                        return true;
+                        return {
+                            matched: true,
+                            startIndex: currentIndex,
+                            endIndex: currentIndex + line.length
+                        };
                     }
+                    // Add 1 to account for the newline character
+                    currentIndex += line.length + 1;
                 }
-                return false;
+                
+                return noMatch;
             }
-            return false;
+            
+            return noMatch;
         } catch (error: any) {
             console.error(`Error processing trigger "${pattern}": ${error.message}`, error);
-            return false;
+            return { matched: false, startIndex: -1, endIndex: -1 };
         }
     }
 
     // Execute trigger actions
-    private executeTriggerActions(actionsText: string, actionType: string = 'text'): void {
+    private executeTriggerActions(text: text_frame, actionsText: string, actionType: string = 'text'): void {
         if (!actionsText) {
             return;
         }
@@ -614,8 +716,8 @@ export class App {
         if (actionType === 'javascript') {
             try {
                 // Execute JavaScript code
-                const executeFunction = new Function('mud', 'app', actionsText);
-                executeFunction(this, this); // Pass 'this' twice for flexibility
+                const executeFunction = new Function('mud', 'app', 'event', actionsText);
+                executeFunction(this, this, text); // Pass 'this' twice for flexibility
             } catch (error: any) {
                 console.error('Error executing JavaScript trigger:', error.message);
                 this.appendToOutput(`Error executing JavaScript trigger: ${error.message}\n`);
@@ -974,6 +1076,7 @@ export class App {
      * @param text The text to display
      */
     public echo(text: string): void {
+        //this.echos.push(text);
         this.appendToOutput(text);
     }
     
